@@ -1,0 +1,22 @@
+{
+    "audio": "rainbow_audio.mp3",
+    "params": [
+        "1.0",
+        "0.0",
+        "0.3",
+        "2.7",
+        "0.0",
+        "1.9",
+        "0.5",
+        "99.0"
+    ],
+    "reslist": [
+        "rainbow_color_tile.png",
+        "rainbow_color_start.png",
+        "shy.png",
+        "star_shine.png",
+        "star_white.png"
+    ],
+    "soundPlayMode": "1",
+    "tips": "张开嘴巴"
+}

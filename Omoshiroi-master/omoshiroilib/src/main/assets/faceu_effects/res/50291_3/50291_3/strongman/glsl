@@ -1,0 +1,262 @@
+//@[@[@9,@16,@23,@46,@74,@77,@84,@90,@44,@82,@83,@80,@81,@49,@6,@26]]
+
+precision highp float;
+varying highp vec2 textureCoordinate;
+
+uniform sampler2D inputImageTexture;
+
+uniform lowp vec2 location0;
+uniform lowp vec2 location1;
+uniform lowp vec2 location2;
+uniform lowp vec2 location3;
+uniform lowp vec2 location4;
+uniform lowp vec2 location5;
+uniform lowp vec2 location6;
+uniform lowp vec2 location7;
+uniform lowp vec2 location8;
+uniform lowp vec2 location9;
+
+uniform lowp vec2 location10;
+uniform lowp vec2 location11;
+uniform lowp vec2 location12;
+uniform lowp vec2 location13;
+uniform lowp vec2 location14;
+uniform lowp vec2 location15;
+
+
+#define p_faceleft          location0
+#define p_chin              location1
+#define p_faceright         location2
+#define p_nose              location3
+#define p_eyecenterleft     location4
+#define p_eyecenterright    location5
+#define p_mouthleft         location6
+#define p_mouthright        location7
+#define p44                 location8
+#define p82                 location9
+#define p83                 location10
+#define p80                 location11
+#define p81                 location12
+#define p49                 location13
+#define p6                  location14
+#define p26                 location15
+
+
+#define x_a 0.72
+#define y_a 1.28
+
+
+vec4 blendNormal(vec4 c1, vec4 c2)
+{
+vec4 outputColor;
+outputColor.r = c1.r + c2.r * c2.a * (1.0 - c1.a);
+outputColor.g = c1.g + c2.g * c2.a * (1.0 - c1.a);
+outputColor.b = c1.b + c2.b * c2.a * (1.0 - c1.a);
+outputColor.a = c1.a + c2.a * (1.0 - c1.a);
+return outputColor;
+}
+
+vec2 faceStretch(vec2 textureCoord, vec2 originPosition, vec2 targetPosition, float radius, float curve)
+{
+vec2 direction = targetPosition - originPosition;
+float lengthA = length(direction);
+if(lengthA<0.0001)   return direction;
+float lengthB = min(lengthA, radius);
+direction *= lengthB / lengthA;
+float infect = distance(textureCoord, originPosition)/radius;
+infect = clamp(1.0-infect,0.0,1.0);
+infect = pow(infect, curve);
+
+return direction * infect;
+}
+
+
+void main()
+{
+
+gl_FragColor            = texture2D(inputImageTexture,textureCoordinate);
+
+if((location3.x>0.03) && (location3.y>0.03))
+{
+vec2 resultCoord        = textureCoordinate;
+
+vec2 x_y_proportion     = vec2(x_a,y_a);
+
+vec2 curCoord           = textureCoordinate*x_y_proportion;
+
+vec2 realFaceLeft       = p_faceleft*x_y_proportion;
+vec2 realFaceRight      = p_faceright*x_y_proportion;
+vec2 realEyeCenterLeft  = p_eyecenterleft*x_y_proportion;
+vec2 realEyeCenterRight = p_eyecenterright*x_y_proportion;
+vec2 realMouthLeft      = p_mouthleft*x_y_proportion;
+vec2 realMouthRight     = p_mouthright*x_y_proportion;
+vec2 realChin           = p_chin*x_y_proportion;
+vec2 realNose           = p_nose*x_y_proportion;
+
+vec2 realP44    = p44*x_y_proportion;
+vec2 realP82    = p82*x_y_proportion;
+vec2 realP83    = p83*x_y_proportion;
+vec2 realP80    = p80*x_y_proportion;
+vec2 realP81    = p81*x_y_proportion;
+vec2 realP49    = p49*x_y_proportion;
+
+vec2 realP6     = p6*x_y_proportion;
+vec2 realP26    = p26*x_y_proportion;
+
+float weight = 1.0;
+
+//narrow eyes
+
+float irisWidth         = distance(realEyeCenterLeft,realEyeCenterRight);
+float standardLength    = irisWidth;
+float eyeRadius         = standardLength*0.4838;
+
+float toLeftEyeCenterDistance    = distance(curCoord,realEyeCenterLeft);
+if(toLeftEyeCenterDistance <= eyeRadius)
+{
+weight      = toLeftEyeCenterDistance/eyeRadius;
+weight      = pow(weight,0.25);
+weight      = clamp(weight,0.001,1.0);
+curCoord    = realEyeCenterLeft+(curCoord-realEyeCenterLeft)/weight;
+}
+
+float toRightEyeCenterDistance    = distance(curCoord,realEyeCenterRight);
+if(toRightEyeCenterDistance <= eyeRadius)
+{
+weight      = toRightEyeCenterDistance/eyeRadius;
+weight      = pow(weight,0.25);
+weight      = clamp(weight,0.001,1.0);
+curCoord    = realEyeCenterRight+(curCoord-realEyeCenterRight)/weight;
+}
+
+//up nose
+{
+vec2 eyeCenter = (realEyeCenterLeft+realEyeCenterRight)*0.5;
+float dis_nose_eyecenter = distance(eyeCenter,realNose);
+float scale = dis_nose_eyecenter/standardLength;
+float max_limit = 0.68;
+float min_limit = 0.45;
+scale = clamp(scale,min_limit,max_limit);
+scale = (scale-min_limit)/(max_limit-min_limit);
+scale = scale * 1.595;
+
+vec2 realP45    = (realP44+realNose)*0.5;
+float radius    = standardLength*0.543;
+vec2 srcPoint   = realP82;
+vec2 dstPoint   = realP82-(realP82-realP44)*0.15*scale;
+vec2 offset     = faceStretch(curCoord,srcPoint,dstPoint,radius,1.0);
+curCoord        = curCoord-offset;
+
+srcPoint        = realP83;
+dstPoint        = realP83-(realP83-realP44)*0.15*scale;
+offset          = faceStretch(curCoord,srcPoint,dstPoint,radius,1.0);
+curCoord        = curCoord-offset;
+
+srcPoint        = realP80;
+dstPoint        = realP80-(realP80-realP44)*0.15;
+offset          = faceStretch(curCoord,srcPoint,dstPoint,radius,1.0);
+curCoord        = curCoord-offset;
+
+srcPoint        = realP81;
+dstPoint        = realP81-(realP81-realP44)*0.15;
+offset          = faceStretch(curCoord,srcPoint,dstPoint,radius,1.0);
+curCoord        = curCoord-offset;
+
+srcPoint        = realP49;
+dstPoint        = realP49-(realP49-realP44)*0.15*scale;
+offset          = faceStretch(curCoord,srcPoint,dstPoint,radius,1.0);
+curCoord        = curCoord-offset;
+
+}
+
+
+//narrow mouth
+vec2 realMouthCenter    = (realMouthLeft+realMouthRight)*0.5;
+float mouthRadius       = standardLength*0.45;
+float toMouthCenterDistance = distance(curCoord,realMouthCenter);
+if(toMouthCenterDistance<=mouthRadius)
+{
+weight = pow(toMouthCenterDistance/mouthRadius,0.3);
+weight  = clamp(weight,0.001,1.0);
+curCoord  = realMouthCenter+(curCoord-realMouthCenter)/weight;
+}
+
+//up mouth
+{
+vec2 realInnerMouthCenter   = (realMouthLeft+realMouthRight)*0.5;
+float mouthRadius           = standardLength*0.5;
+
+vec2 srcPoint               = realMouthLeft;
+vec2 dstPoint               = realMouthLeft-(realMouthLeft-realNose)*0.296;
+vec2 offset                 = faceStretch(curCoord,srcPoint,dstPoint,mouthRadius,1.0);
+curCoord                    = curCoord-offset;
+
+srcPoint    = realMouthRight;
+dstPoint    = realMouthRight-(realMouthRight-realNose)*0.296;
+offset      = faceStretch(curCoord,srcPoint,dstPoint,mouthRadius,1.0);
+curCoord    = curCoord-offset;
+
+srcPoint    = realInnerMouthCenter;
+dstPoint    = srcPoint - (srcPoint-realNose)*0.151;
+offset      = faceStretch(curCoord,srcPoint,dstPoint,mouthRadius,1.0);
+curCoord    = curCoord-offset;
+}
+
+//enlarge face
+
+vec2 realLeftFaceCenter = realNose+(realP6-realNose)*0.8;
+float faceRadius    = standardLength*0.986;
+float toLeftFaceCenterDistance = distance(curCoord,realLeftFaceCenter);
+if(toLeftFaceCenterDistance<faceRadius)
+{
+weight = toLeftFaceCenterDistance/faceRadius;
+weight = pow(weight,0.35);
+curCoord = realLeftFaceCenter+(curCoord-realLeftFaceCenter)*weight;
+}
+
+vec2 realRightFaceCenter = realNose+(realP26-realNose)*0.8;
+float toRightFaceCenterDistance = distance(curCoord,realRightFaceCenter);
+if(toRightFaceCenterDistance<faceRadius)
+{
+weight = toRightFaceCenterDistance/faceRadius;
+weight = pow(weight,0.35);
+curCoord = realRightFaceCenter+(curCoord-realRightFaceCenter)*weight;
+}
+
+
+float radius  = standardLength*1.2;
+vec2 srcPoint = realFaceLeft;
+vec2 dstPoint = realNose+(realFaceLeft-realNose)*1.1;
+vec2 offset   = faceStretch(curCoord,srcPoint,dstPoint,radius,1.0);
+curCoord      = curCoord - offset;
+
+srcPoint = realFaceRight;
+dstPoint = realNose+(realFaceRight-realNose)*1.1;
+offset   = faceStretch(curCoord,srcPoint,dstPoint,radius,1.0);
+curCoord = curCoord - offset;
+
+radius = standardLength*1.5;
+srcPoint = realChin;
+dstPoint = realNose+(realChin-realNose)*0.95;
+offset   = faceStretch(curCoord,srcPoint,dstPoint,radius,1.0);
+curCoord = curCoord - offset;
+
+
+//enlarge neck
+vec2  realNeckCenter = realNose+(realChin-realNose)*1.1;
+float neckRadius = standardLength*1.53;
+float toNeckCenterDistance  = distance(curCoord,realNeckCenter);
+if(toNeckCenterDistance <= neckRadius)
+{
+weight      = toNeckCenterDistance/neckRadius;
+weight      = pow(weight,0.304);
+curCoord    = realNeckCenter+(curCoord-realNeckCenter)*weight;
+}
+
+resultCoord = curCoord/x_y_proportion;
+
+gl_FragColor = texture2D(inputImageTexture, resultCoord);
+}
+}
+
+

@@ -1,0 +1,292 @@
+ precision highp float;
+varying highp vec2 textureCoordinate;
+ 
+ uniform sampler2D inputImageTexture;
+ uniform sampler2D inputImageTexture2;
+ uniform sampler2D inputImageTexture3;
+ uniform sampler2D inputImageTexture4;
+ uniform sampler2D inputImageTexture5;
+ uniform sampler2D inputImageTexture6;
+ uniform lowp vec2 p_left;
+ uniform lowp vec2 p_right;
+ uniform lowp vec2 p_top;
+ uniform lowp vec2 p_bottom;
+ uniform lowp vec2 p_eyea; 
+ uniform lowp vec2 p_eyeb; 
+ uniform lowp vec2 p_nose; 
+ uniform lowp float m_time; 
+ uniform lowp float m_detect; 
+ 
+vec4 blendNormal(vec4 c1, vec4 c2) {
+vec4 outputColor;
+outputColor.r = c1.r + c2.r * c2.a * (1.0 - c1.a);
+outputColor.g = c1.g + c2.g * c2.a * (1.0 - c1.a);
+outputColor.b = c1.b + c2.b * c2.a * (1.0 - c1.a);
+outputColor.a = c1.a + c2.a * (1.0 - c1.a);
+return outputColor;
+}
+float fadeIn(float fade_x, float fade_y, float time) 
+{ 
+    float f_time = m_time; 
+    if(m_time>time) 
+      f_time = time; 
+    float value = (fade_y-fade_x)*f_time/time + fade_x; 
+    return value; 
+} 
+void main(){
+gl_FragColor = texture2D(inputImageTexture,textureCoordinate);
+ vec2 newCoord = vec2(0.0,0.0); 
+ float weight = 1.0; 
+ float aspect = 0.3625; 
+vec4 bigMouth = vec4(1.0,0.0,0.0,0.0); 
+if(m_detect > 0.9) 
+{ 
+float eyebig = (p_right.x-p_left.x)*0.09; 
+float eyebig2 = (p_right.x-p_left.x)*0.09; 
+if(m_detect > 1.1) 
+{ 
+    aspect = 0.4625; 
+    eyebig2 = (p_right.x-p_left.x)*0.24; 
+} 
+float dis_eye1 = distance(vec2(textureCoordinate.x*aspect,textureCoordinate.y), vec2(p_eyea.x*aspect,p_eyea.y)); 
+if(dis_eye1 <= fadeIn(eyebig,eyebig2, 0.1) ) 
+{ 
+  weight = dis_eye1 /fadeIn(eyebig,eyebig2, 0.1); 
+  newCoord.x = p_eyea.x +(textureCoordinate.x - p_eyea.x) * weight; 
+  newCoord.y = p_eyea.y +(textureCoordinate.y - p_eyea.y) * weight; 
+   gl_FragColor = texture2D(inputImageTexture, newCoord);
+} 
+float dis_eye2 = distance(vec2(textureCoordinate.x*aspect,textureCoordinate.y), vec2(p_eyeb.x*aspect,p_eyeb.y)); 
+if(dis_eye2 <= fadeIn(eyebig,eyebig2, 0.1) ) 
+{ 
+  weight = dis_eye2 /fadeIn(eyebig,eyebig2, 0.1); 
+  newCoord.x = p_eyeb.x +(textureCoordinate.x - p_eyeb.x) * weight; 
+  newCoord.y = p_eyeb.y +(textureCoordinate.y - p_eyeb.y) * weight; 
+   gl_FragColor = texture2D(inputImageTexture, newCoord);
+} 
+} 
+float face_width = (p_eyeb.x - p_eyea.x) * 2.0; 
+vec2 resize = vec2(face_width*1.3,face_width*0.89)*1.15; 
+vec2 target = vec2(p_nose.x, p_nose.y); 
+aspect = 0.5625; 
+if(m_time > 0.0) 
+{ 
+float mouthBig = (p_right.x-p_left.x)*0.5; 
+vec2 mouth_center = vec2((p_top.x+p_bottom.x)*0.5, (p_top.y+p_bottom.y)*0.5); 
+float dis_mouth = distance(vec2(textureCoordinate.x*aspect,textureCoordinate.y), vec2(mouth_center.x*aspect,mouth_center.y)); 
+if(dis_mouth < fadeIn(0.0,mouthBig, 0.12)) 
+{ 
+  weight = dis_mouth / fadeIn(0.0,mouthBig, 0.12); 
+  newCoord.x = mouth_center.x +(textureCoordinate.x - mouth_center.x) * weight; 
+  newCoord.y = mouth_center.y +(textureCoordinate.y - mouth_center.y) * weight; 
+   gl_FragColor = texture2D(inputImageTexture, newCoord);
+   bigMouth = texture2D(inputImageTexture, newCoord);
+} 
+} 
+if(p_eyea.x + p_eyea.y > 0.0) 
+{ 
+ resize = resize * 1.1; 
+if(textureCoordinate.x<=(target.x+resize.x*0.5) && textureCoordinate.x>(target.x-resize.x*0.5) && 
+   textureCoordinate.y<=(target.y+resize.y*0.5) && textureCoordinate.y>(target.y-resize.y*0.5) ) 
+{ 
+  vec2 coordUse = vec2((textureCoordinate.x-target.x+resize.x*0.5)/resize.x, 
+                       (textureCoordinate.y-target.y+resize.y*0.5)/resize.y); 
+float distans_eye =distance(vec2(p_eyea.x, p_eyea.y/0.5625),vec2(p_eyeb.x, p_eyeb.y/0.5625));
+float signx = 1.0*(p_eyea.y - p_eyeb.y)/(distans_eye*0.5625);
+float cosignx = 1.0*(p_eyea.x - p_eyeb.x)/distans_eye;
+vec2 rot1 = vec2(cosignx,1.0*signx);
+vec2 rot2 = vec2(-1.0*signx,cosignx);
+mat2 rot = mat2(rot1,rot2);
+coordUse = coordUse * rot;
+
+vec2 coord = vec2(0.5,0.5) * rot;
+vec2 dis = coord - vec2(0.5,0.5);
+coordUse = coordUse - dis;
+  vec4 pickSample = texture2D(inputImageTexture4, coordUse); 
+  gl_FragColor = blendNormal(pickSample, gl_FragColor); 
+} 
+} 
+if(m_time > 0.0) 
+{ 
+vec2 littleRect = vec2((p_right.x-p_left.x)*1.25,0.1);
+vec2 startPosition = p_left; 
+startPosition.y += face_width * 0.03; 
+startPosition.x -= face_width * 0.03; 
+vec2 largeRect = vec2(littleRect.x, littleRect.y+m_time); 
+vec4 sampleColor = vec4(0.0,0.0,0.0,0.0); 
+if(textureCoordinate.y>startPosition.y-(largeRect.y-littleRect.y)&&textureCoordinate.y<=startPosition.y &&
+textureCoordinate.x < startPosition.x + largeRect.x && textureCoordinate.x > startPosition.x)
+{
+    float left = fract((startPosition.y - (largeRect.y - littleRect.y) - textureCoordinate.y)/littleRect.y); 
+    vec2 textureCoordinateToUse = vec2(     
+   (textureCoordinate.x - startPosition.x)/largeRect.x,left);
+    sampleColor = texture2D(inputImageTexture2,textureCoordinateToUse);
+  gl_FragColor = blendNormal(sampleColor, gl_FragColor); 
+}
+if(textureCoordinate.y>startPosition.y-largeRect.y&&textureCoordinate.y<=startPosition.y-(largeRect.y - littleRect.y)&&
+textureCoordinate.x < startPosition.x + largeRect.x && textureCoordinate.x > startPosition.x)
+{
+    vec2 textureCoordinateToUse = vec2((textureCoordinate.x - startPosition.x)/largeRect.x,
+   1.0-( textureCoordinate.y-(startPosition.y-largeRect.y) )/littleRect.y);
+    sampleColor = texture2D(inputImageTexture3,textureCoordinateToUse);
+    gl_FragColor = blendNormal(sampleColor, gl_FragColor); 
+}
+if(textureCoordinate.y>startPosition.y-littleRect.y*0.5 &&textureCoordinate.y<=startPosition.y &&
+textureCoordinate.x < startPosition.x + largeRect.x && textureCoordinate.x > startPosition.x)
+{
+    float fade = (textureCoordinate.y-(startPosition.y-littleRect.y*0.5))/(littleRect.y*0.5); 
+    if(bigMouth.a > 0.0) 
+       gl_FragColor = gl_FragColor*(1.0-fade) + bigMouth*fade; 
+    else 
+       gl_FragColor = gl_FragColor*(1.0-fade) + texture2D(inputImageTexture,textureCoordinate)*fade; 
+}
+vec2 coordUse = vec2(0.0,0.0); 
+vec4 pickSample = vec4(0.0,0.0,0.0,0.0); 
+float shiny = fract(m_time*2.0); 
+float aa = 0.0; 
+if(shiny<0.25) 
+{ 
+resize = vec2(0.1,0.05625)*0.3; 
+target = vec2(p_left.x+0.24, p_left.y-0.13); 
+aa = shiny/0.25; 
+} 
+else if(shiny<0.5)
+{ 
+resize = vec2(0.1,0.05625)*0.6; 
+target = vec2(p_left.x+0.08, p_left.y-0.09); 
+aa = (shiny-0.25)/0.25; 
+} 
+else if(shiny<0.75)
+{ 
+resize = vec2(0.1,0.05625)*0.7; 
+target = vec2(p_left.x+0.13, p_left.y-0.11); 
+aa = (shiny-0.5)/0.25; 
+} 
+else 
+{ 
+resize = vec2(0.1,0.05625)*0.4; 
+target = vec2(p_left.x+0.14, p_left.y-0.05); 
+aa = (shiny-0.75)/0.25; 
+} 
+resize = resize * 2.0; 
+if(textureCoordinate.x<=(target.x+resize.x*0.5) && textureCoordinate.x>(target.x-resize.x*0.5) && 
+   textureCoordinate.y<=(target.y+resize.y*0.5) && textureCoordinate.y>(target.y-resize.y*0.5) ) 
+{ 
+  coordUse = vec2((textureCoordinate.x-target.x+resize.x*0.5)/resize.x, 
+                    (textureCoordinate.y-target.y+resize.y*0.5)/resize.y); 
+  pickSample = texture2D(inputImageTexture6, coordUse); 
+  aa = -6.0 * aa * (aa - 1.0); 
+  aa = clamp(aa, 0.0, 1.0); 
+  pickSample.a = pickSample.a * aa; 
+  gl_FragColor = blendNormal(pickSample, gl_FragColor); 
+} 
+if(shiny<0.25) 
+{ 
+resize = vec2(0.1,0.05625)*0.2; 
+target = vec2(p_right.x-0.1, p_right.y-0.2); 
+aa = shiny/0.25; 
+} 
+else if(shiny<0.5)
+{ 
+resize = vec2(0.1,0.05625)*0.8; 
+target = vec2(p_right.x-0.12, p_right.y-0.32); 
+aa = (shiny-0.25)/0.25; 
+} 
+else if(shiny<0.75)
+{ 
+resize = vec2(0.1,0.05625)*0.6; 
+target = vec2(p_right.x-0.11, p_right.y-0.23); 
+aa = (shiny-0.5)/0.25; 
+} 
+else 
+{ 
+resize = vec2(0.1,0.05625)*0.3; 
+target = vec2(p_right.x-0.14, p_right.y-0.15); 
+aa = (shiny-0.75)/0.25; 
+} 
+resize = resize * 2.2; 
+if(textureCoordinate.x<=(target.x+resize.x*0.5) && textureCoordinate.x>(target.x-resize.x*0.5) && 
+   textureCoordinate.y<=(target.y+resize.y*0.5) && textureCoordinate.y>(target.y-resize.y*0.5) ) 
+{ 
+  coordUse = vec2((textureCoordinate.x-target.x+resize.x*0.5)/resize.x, 
+                    (textureCoordinate.y-target.y+resize.y*0.5)/resize.y); 
+  pickSample = texture2D(inputImageTexture6, coordUse); 
+  aa = -6.0 * aa * (aa - 1.0); 
+  aa = clamp(aa, 0.0, 1.0); 
+  pickSample.a = pickSample.a * aa; 
+  gl_FragColor = blendNormal(pickSample, gl_FragColor); 
+} 
+if(shiny<0.25) 
+{ 
+resize = vec2(0.1,0.05625)*0.6; 
+target = vec2(p_top.x+0.15, p_top.y-0.33); 
+aa = shiny/0.25; 
+} 
+else if(shiny<0.5)
+{ 
+resize = vec2(0.1,0.05625)*0.4; 
+target = vec2(p_top.x-0.17, p_top.y-0.17); 
+aa = (shiny-0.25)/0.25; 
+} 
+else if(shiny<0.75)
+{ 
+resize = vec2(0.1,0.05625)*0.7; 
+target = vec2(p_top.x+0.03, p_top.y-0.13); 
+aa = (shiny-0.5)/0.25; 
+} 
+else 
+{ 
+resize = vec2(0.1,0.05625)*0.9; 
+target = vec2(p_top.x-0.06, p_top.y-0.25); 
+aa = (shiny-0.75)/0.25; 
+} 
+resize = resize * 2.5; 
+if(textureCoordinate.x<=(target.x+resize.x*0.5) && textureCoordinate.x>(target.x-resize.x*0.5) && 
+   textureCoordinate.y<=(target.y+resize.y*0.5) && textureCoordinate.y>(target.y-resize.y*0.5) ) 
+{ 
+  coordUse = vec2((textureCoordinate.x-target.x+resize.x*0.5)/resize.x, 
+                    (textureCoordinate.y-target.y+resize.y*0.5)/resize.y); 
+  pickSample = texture2D(inputImageTexture5, coordUse); 
+  aa = -6.0 * aa * (aa - 1.0); 
+  aa = clamp(aa, 0.0, 1.0); 
+  pickSample.a = pickSample.a * aa; 
+  gl_FragColor = blendNormal(pickSample, gl_FragColor); 
+} 
+if(shiny<0.25) 
+{ 
+resize = vec2(0.1,0.05625)*0.8; 
+target = vec2(p_bottom.x-0.05, p_bottom.y-0.33); 
+aa = shiny/0.25; 
+} 
+else if(shiny<0.5)
+{ 
+resize = vec2(0.1,0.05625)*0.4; 
+target = vec2(p_bottom.x+0.25, p_bottom.y-0.25); 
+aa = (shiny-0.25)/0.25; 
+} 
+else if(shiny<0.75)
+{ 
+resize = vec2(0.1,0.05625)*0.6; 
+target = vec2(p_bottom.x-0.13, p_bottom.y-0.17); 
+aa = (shiny-0.5)/0.25; 
+} 
+else 
+{ 
+resize = vec2(0.1,0.05625)*0.3; 
+target = vec2(p_bottom.x+0.1, p_bottom.y-0.13); 
+aa = (shiny-0.75)/0.25; 
+} 
+resize = resize * 2.3; 
+if(textureCoordinate.x<=(target.x+resize.x*0.5) && textureCoordinate.x>(target.x-resize.x*0.5) && 
+   textureCoordinate.y<=(target.y+resize.y*0.5) && textureCoordinate.y>(target.y-resize.y*0.5) ) 
+{ 
+  coordUse = vec2((textureCoordinate.x-target.x+resize.x*0.5)/resize.x, 
+                    (textureCoordinate.y-target.y+resize.y*0.5)/resize.y); 
+  pickSample = texture2D(inputImageTexture5, coordUse); 
+  aa = -6.0 * aa * (aa - 1.0); 
+  aa = clamp(aa, 0.0, 1.0); 
+  pickSample.a = pickSample.a * aa; 
+  gl_FragColor = blendNormal(pickSample, gl_FragColor); 
+} 
+} 
+}

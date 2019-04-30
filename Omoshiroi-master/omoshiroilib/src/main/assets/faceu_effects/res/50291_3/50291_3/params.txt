@@ -1,0 +1,85 @@
+﻿{
+    "filterlist": [
+        {
+            "data": {
+                "audio": "",
+                "soundPlayMode": 0,
+                "foldername": "strongman",
+                "maxcount": 2,
+                "pointindexarray": [
+                    [
+                        9,
+                        16,
+                        23,
+                        46,
+                        74,
+                        77,
+                        84,
+                        90,
+                        44,
+                        82,
+                        83,
+                        80,
+                        81,
+                        49,
+                        6,
+                        26
+                    ],
+                    [
+                        9,
+                        16,
+                        23,
+                        46,
+                        74,
+                        77,
+                        84,
+                        90,
+                        44,
+                        82,
+                        83,
+                        80,
+                        81,
+                        49,
+                        6,
+                        26
+                    ]
+                ],
+                "reslist": [],
+                "resloadtype": 0,
+                "timeparam": [
+                    1,
+                    1,
+                    1,
+                    1,
+                    1,
+                    1,
+                    1,
+                    1
+                ],
+                "triggerType": 2
+            },
+            "name": "strongman",
+            "reload": 1,
+            "type": "shapechange"            
+        }
+    ],
+    "initsection": "fatface",
+    "sections": [
+        {
+            "duration": -1,
+            "filterlist": [
+                "strongman"                
+            ],
+            "sectionname": "fatface",
+            "tips": "试下拍朋友点点滴滴哦",
+            "duration": 3
+        }
+    ],
+    "statemachine": [
+        {
+            "oldsection": "fatface",
+            "triggerType": 1111,
+            "newsection": "fatface"
+        }
+    ]
+}

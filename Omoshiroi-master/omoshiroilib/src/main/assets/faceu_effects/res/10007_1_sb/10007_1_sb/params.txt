@@ -1,0 +1,21 @@
+{
+    "audio": "shabi_audio.mp3",
+    "params": [
+        "1.0",
+        "0.0",
+        "1.0",
+        "2.7",
+        "0.7",
+        "1.0",
+        "1.2",
+        "99.0"
+    ],
+    "reslist": [
+        "mosaic.png",
+        "shaby.png",
+        "rednose.png",
+        "snif.png"
+    ],
+    "soundPlayMode": "1",
+    "tips": "张开嘴巴"
+}
